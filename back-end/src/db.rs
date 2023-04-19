@@ -1,8 +1,8 @@
 use mongodb::{bson::doc, options::{ClientOptions, ServerApi, ServerApiVersion}, Client};
 
 #[tokio::main]
-async fn db_connect() {
-  let uri = "localhost:27017";
+pub async fn db_connect() -> mongodb::error::Result<()> {
+  let uri = "mongodb://localhost:27017";
   let mut client_options =
       ClientOptions::parse(uri)
           .await?;

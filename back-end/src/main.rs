@@ -1,5 +1,7 @@
+mod db;
+
 fn main() {
-    println!("Hello, world!");
+    db::db_connect();
 }
 
 
