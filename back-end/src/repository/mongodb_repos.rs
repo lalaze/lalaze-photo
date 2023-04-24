@@ -2,7 +2,7 @@ use std::env;
 extern crate dotenv;
 use dotenv::dotenv;
 use actix_web::{web};
-use std::future::Future;
+use futures_util::io::AsyncWriteExt;
 use futures_util::StreamExt as _;
 use mongodb::{
     bson::{extjson::de::Error},
@@ -33,12 +33,10 @@ impl MongoRepo {
         MongoRepo { db, bucket }
     }
 
-    pub async fn uploadFile(&self, file_name: String, mut payload: web::Payload) -> Result<(), Error> {
-        let mut bytes = web::BytesMut::new();
-        while let Some(item) = payload.next().await {
-            bytes.extend_from_slice(&item.unwrap());
-        }
-
+    pub async fn uploadFile(&self, file_name: String, data: web::BytesMut) -> Result<(), Error> {
+        let mut upload_stream = &mut self.bucket.open_upload_stream(file_name, None);
+        upload_stream.write_all(&data[..]).await.unwrap();
+        upload_stream.close().await.unwrap();
         Ok(())
     }
 }
