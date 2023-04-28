@@ -28,12 +28,14 @@ impl MongoRepo {
             Ok(v) => v.to_string(),
             Err(_) => format!("Error loading env variable"),
         };
+        println!("{}", "数据库初始化");
         let db = client.database(&database_name);
         let bucket = db.gridfs_bucket(None);
         MongoRepo { db, bucket }
     }
 
-    pub async fn uploadFile(&self, file_name: String, data: web::BytesMut) -> Result<(), Error> {
+    pub async fn uploadFile(&self, file_name: String, data: Vec<u8>) -> Result<(), Error> {
+        println!("{}", "开始上传");
         let mut upload_stream = &mut self.bucket.open_upload_stream(file_name, None);
         upload_stream.write_all(&data[..]).await.unwrap();
         upload_stream.close().await.unwrap();
