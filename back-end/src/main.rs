@@ -3,7 +3,9 @@ mod api;
 mod models;
 mod repository;
 use repository::mongodb_repos::MongoRepo;
-use api::files::upload_file;
+use api::files;
+use std::{fs, path::Path};
+use std::path::PathBuf;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -12,14 +14,19 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let db = MongoRepo::init().await;
-    let db_data = Data::new(db);
-    HttpServer::new(move || {
-        App::new()
-            .app_data(db_data.clone())
-            .service(upload_file)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+  // let mut stack = vec![PathBuf::from("./test")];
+  // print!("{:?}", stack);
+
+  let db = MongoRepo::init().await;
+  let db_data = Data::new(db);
+  HttpServer::new(move || {
+      App::new()
+          .app_data(db_data.clone())
+          .service(files::upload_file)
+          .service(files::upload_file_path)
+          .service(files::upload_file_dir)
+  })
+  .bind(("127.0.0.1", 8080))?
+  .run()
+  .await
 }

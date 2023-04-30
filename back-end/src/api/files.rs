@@ -1,12 +1,15 @@
 use crate::{repository::mongodb_repos::MongoRepo};
 use actix_multipart::Multipart;
+use serde::Deserialize;
 use actix_web::{
   post,
-  web::{Data, Form },
+  get,
+  web::{Data, Query},
   HttpResponse,
   Error,
   error
 };
+use crate::models::photo::Photo;
 use futures_util::StreamExt as _;
 
 #[post("/upload")]
@@ -40,10 +43,29 @@ pub async fn upload_file(db: Data<MongoRepo>, mut payload: Multipart) -> Result<
     let file_content = file_content.ok_or_else(|| error::ErrorBadRequest("missing file field"))?;
     let file_name = file_name.ok_or_else(|| error::ErrorBadRequest("missing file_name field"))?;
 
-    db.uploadFile(file_name, file_content).await;
+    db.upload_file(file_name, file_content).await.expect("uplaod field");
 
-    print!("{}", "1234");
-
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().body("upload done"))
 
 }
+
+#[get("upload_file_path")]
+pub async fn upload_file_path(db: Data<MongoRepo>, info: Query<Photo>) -> Result<HttpResponse, Error>  {
+  db.crate_photo(info.name.clone(), info.location.clone()).await.expect("create field");
+  Ok(HttpResponse::Ok().body("upload done"))
+}
+
+#[derive(Deserialize)]
+pub struct Info {
+  file_path: String,
+}
+
+#[get("upload_file_dir")]
+pub async fn upload_file_dir(db: Data<MongoRepo>, info: Query<Info>) -> Result<HttpResponse, Error>  {
+  let path = info.file_path.clone();
+
+  db.crate_photo_dir(&path).await.expect("create field");
+
+  Ok(HttpResponse::Ok().body("upload done"))
+}
+
