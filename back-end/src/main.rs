@@ -3,7 +3,7 @@ mod api;
 mod models;
 mod repository;
 use repository::mongodb_repos::MongoRepo;
-use api::files;
+use api::photo;
 use std::{fs, path::Path};
 use std::path::PathBuf;
 
@@ -22,9 +22,12 @@ async fn main() -> std::io::Result<()> {
   HttpServer::new(move || {
       App::new()
           .app_data(db_data.clone())
-          .service(files::upload_file)
-          .service(files::upload_file_path)
-          .service(files::upload_file_dir)
+          .service(api::photo::upload_file)
+          .service(api::photo::upload_file_path)
+          .service(api::photo::upload_file_dir)
+          .service(api::photo::get_photos)
+          .service(api::photo::update_photo)
+          .service(api::photo::delte_photo)
   })
   .bind(("127.0.0.1", 8080))?
   .run()
