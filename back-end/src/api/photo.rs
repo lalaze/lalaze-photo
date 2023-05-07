@@ -10,7 +10,6 @@ use actix_web::{
 };
 use crate::models::photo::Photo;
 use futures_util::StreamExt as _;
-use mongodb::bson::oid::ObjectId;
 use regex::Regex;
 
 #[post("/upload")]
@@ -97,11 +96,10 @@ pub struct Update_Info {
 #[get("update_photo")]
 pub async fn update_photo(db: Data<MongoRepo>, info: Query<Update_Info>) -> HttpResponse  {
   let id: String = info.id.clone();
-  let tags: Vec<Option<i64>>;
-  let re = Regex::new(r"^\d+(,\d+)*$").unwrap();
+  let tags: Vec<Option<String>>;
+  let re = Regex::new(r"^[^,]*(,[^,]*)*$").unwrap();
   if re.is_match(&info.tag) {
-    tags = info.tag.split(',')
-    .map(|x| x.parse::<i64>().ok())
+    tags = info.tag.split(',').map(|x| if x.is_empty() { None } else { Some(x.to_string()) })
     .collect();
   } else {
     return HttpResponse::InternalServerError().body("tag is illegality")
@@ -116,9 +114,9 @@ pub async fn update_photo(db: Data<MongoRepo>, info: Query<Update_Info>) -> Http
   match update_result {
     Ok(update) => {
         if update.matched_count == 1 {
-            let updated_user_info = db.get_photo(&id).await;
-            return match updated_user_info {
-                Ok(user) => HttpResponse::Ok().json(user),
+            let updated_photo_info = db.get_photo(&id).await;
+            return match updated_photo_info {
+                Ok(photo) => HttpResponse::Ok().json(photo),
                 Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
             };
         } else {
@@ -147,7 +145,7 @@ pub async fn delte_photo(db: Data<MongoRepo>, info: Query<Delete_Info>) -> HttpR
           if res.deleted_count == 1 {
               return HttpResponse::Ok().json("photo successfully deleted!");
           } else {
-              return HttpResponse::NotFound().json("User with specified ID not found!");
+              return HttpResponse::NotFound().json("photo with specified ID not found!");
           }
       }
       Err(err) => HttpResponse::InternalServerError().body(err.to_string()),

@@ -6,5 +6,5 @@ pub struct Photo {
     pub id: Option<String>,
     pub name: String,
     pub location: String,
-    pub tag: Vec<Option<i64>>,
+    pub tag: Vec<Option<String>>,
 }

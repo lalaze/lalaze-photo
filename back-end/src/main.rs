@@ -3,9 +3,6 @@ mod api;
 mod models;
 mod repository;
 use repository::mongodb_repos::MongoRepo;
-use api::photo;
-use std::{fs, path::Path};
-use std::path::PathBuf;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -14,9 +11,6 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-  // let mut stack = vec![PathBuf::from("./test")];
-  // print!("{:?}", stack);
-
   let db = MongoRepo::init().await;
   let db_data = Data::new(db);
   HttpServer::new(move || {
@@ -28,6 +22,9 @@ async fn main() -> std::io::Result<()> {
           .service(api::photo::get_photos)
           .service(api::photo::update_photo)
           .service(api::photo::delte_photo)
+          .service(api::tag::add_tag)
+          .service(api::tag::update_tag)
+          .service(api::tag::delte_tag)
   })
   .bind(("127.0.0.1", 8080))?
   .run()

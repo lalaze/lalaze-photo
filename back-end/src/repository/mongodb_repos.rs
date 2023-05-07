@@ -6,6 +6,7 @@ use futures_util::io::AsyncWriteExt;
 use crate::models::{ photo::Photo, tag::Tag };
 use std::{fs};
 use std::path::PathBuf;
+use mongodb::bson::oid::ObjectId;
 use mongodb::{
     bson::{extjson::de::Error, doc},
     Client,
@@ -156,12 +157,52 @@ impl MongoRepo {
           .delete_one(filter, None)
           .await
           .ok()
-          .expect("Error deleting user");
+          .expect("Error deleting photo");
       Ok(photo_detail)
     }
 
-    pub async fn add_tag(&self, id: &String)  -> Result<DeleteResult, Error> {
-      let filter = doc! {"_id": location.clone()};
-      let result = self.col.count_documents(filter, None).await.unwrap();
+    pub async fn add_tag(&self, name: &String, color: &String)  -> Result<(), Error> {
+      let tag = Tag {
+        name: name.to_string(),
+        color: color.to_string()
+      };
+
+      match self.col2.insert_one(tag, None).await {
+        Ok(_) => println!("Insert successful"),
+        Err(e) => {
+            eprintln!("Insert error: {}", e);
+        },
+      }
+      Ok(())
+    }
+
+    pub async fn edit_tag(&self, id: &String, name: &String, color: &String) -> Result<UpdateResult, Error> {
+      let filter = doc! {"_id": id};
+      let new_doc = doc! {
+        "$set":
+            {
+              "name": name,
+              "color": color
+            },
+        };
+      let updated_doc = self
+        .col
+        .update_one(filter, new_doc, None)
+        .await
+        .ok()
+        .expect("Error updating photo");
+      Ok(updated_doc)
+    }
+
+    pub async fn delete_tag(&self, id: &String) -> Result<DeleteResult, Error> {
+      let filter = doc! {"_id": ObjectId::parse_str(id).unwrap()};
+
+      let photo_detail = self
+          .col2
+          .delete_one(filter, None)
+          .await
+          .ok()
+          .expect("Error deleting tag");
+      Ok(photo_detail)
     }
 }
