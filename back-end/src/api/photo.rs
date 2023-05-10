@@ -1,4 +1,5 @@
 use crate::{repository::mongodb_repos::MongoRepo};
+use crate::{api::response::MyResponse};
 use actix_multipart::Multipart;
 use serde::Deserialize;
 use actix_web::{
@@ -45,7 +46,13 @@ pub async fn upload_file(db: Data<MongoRepo>, mut payload: Multipart) -> HttpRes
 
     db.upload_file(file_name, file_content).await.expect("uplaod field");
 
-    HttpResponse::Ok().body("upload done")
+    let result: MyResponse<String> = MyResponse {
+      result: "0".to_string(),
+      message: "upload done".to_string(),
+      data: None
+    };
+
+    HttpResponse::Ok().json(result)
 
 }
 
@@ -66,7 +73,14 @@ pub async fn upload_file_dir(db: Data<MongoRepo>, info: Query<Upload_Info>) -> H
 
   db.crate_photo_dir(&path).await.expect("create field");
 
-  HttpResponse::Ok().body("upload done")
+
+  let result: MyResponse<String> = MyResponse {
+    result: "0".to_string(),
+    message: "upload done".to_string(),
+    data: None
+  };
+
+  HttpResponse::Ok().json(result)
 }
 
 #[derive(Deserialize)]
@@ -80,7 +94,14 @@ pub struct Get_Info {
 pub async fn get_photos(db: Data<MongoRepo>, info: Query<Get_Info>) -> HttpResponse  {
   let photos = db.get_photos(info.offset, info.limit).await;
   match photos {
-    Ok(photos) => HttpResponse::Ok().json(photos),
+    Ok(photos) => {
+      let result = MyResponse {
+        result: "0".to_string(),
+        message: "get done".to_string(),
+        data: Some(photos)
+      };
+      HttpResponse::Ok().json(result)
+    },
     Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
   }
 }
@@ -116,7 +137,14 @@ pub async fn update_photo(db: Data<MongoRepo>, info: Query<Update_Info>) -> Http
         if update.matched_count == 1 {
             let updated_photo_info = db.get_photo(&id).await;
             return match updated_photo_info {
-                Ok(photo) => HttpResponse::Ok().json(photo),
+                Ok(photo) => {
+                  let result = MyResponse {
+                    result: "0".to_string(),
+                    message: "update done".to_string(),
+                    data: Some(photo)
+                  };
+                  HttpResponse::Ok().json(result)
+                },
                 Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
             };
         } else {
@@ -143,7 +171,12 @@ pub async fn delte_photo(db: Data<MongoRepo>, info: Query<Delete_Info>) -> HttpR
   match result {
       Ok(res) => {
           if res.deleted_count == 1 {
-              return HttpResponse::Ok().json("photo successfully deleted!");
+              let result: MyResponse<String> = MyResponse {
+                result: "0".to_string(),
+                message: "oto successfully deleted!".to_string(),
+                data: None
+              };
+              return HttpResponse::Ok().json(result);
           } else {
               return HttpResponse::NotFound().json("photo with specified ID not found!");
           }

@@ -15,7 +15,6 @@ async fn main() -> std::io::Result<()> {
   let db_data = Data::new(db);
   HttpServer::new(move || {
       App::new()
-          .wrap(api::middleware::middleware)
           .app_data(db_data.clone())
           .service(api::photo::upload_file)
           .service(api::photo::upload_file_path)
