@@ -1,13 +1,38 @@
-use actix_web::{get, App, HttpResponse, HttpServer, Responder, web::Data, http};
+use actix_web::{web, get, App, HttpResponse, HttpServer, Responder, web::Data, post};
 mod api; 
 mod models;
 mod repository;
 use repository::mongodb_repos::MongoRepo;
 use actix_cors::Cors;
+use serde::{Deserialize, Serialize};
+// use actix_web_httpauth::{extractors::bearer::BearerAuth, middleware::HttpAuthentication};
+
+// async fn ok_validator(
+//   req: ServiceRequest,
+//   credentials: BearerAuth,
+// ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
+//   eprintln!("{credentials:?}");
+//   Ok(req)
+// }
+
+
 
 #[get("/")]
 async fn hello() -> impl Responder {
-    HttpResponse::Ok().json("Hello from rust and mongoDB")
+  HttpResponse::Ok().json("Hello from rust and mongoDB")
+}
+
+#[derive(Serialize, Deserialize)]
+struct LoginDTO {
+  pub id: i32,
+  pub pwd: String,
+}
+
+/// 登陆
+#[post("/login")]
+async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> impl Responder {
+    let token = api::auth::create_jwt(&body.id);
+    HttpResponse::Ok().json(token)
 }
 
 #[actix_web::main]
@@ -15,16 +40,8 @@ async fn main() -> std::io::Result<()> {
   let db = MongoRepo::init().await;
   let db_data = Data::new(db);
   HttpServer::new(move || {
-      let cors = Cors::default()
-        .allowed_origin("*")
-        .allowed_origin_fn(|origin, _req_head| {
-            origin.as_bytes().ends_with(b".rust-lang.org")
-        })
-        .allowed_methods(vec!["GET", "POST"])
-        .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-        .allowed_header(http::header::CONTENT_TYPE)
-        .max_age(3600);
       App::new()
+          .wrap(Cors::permissive())
           .app_data(db_data.clone())
           .service(api::photo::upload_file)
           .service(api::photo::upload_file_path)
@@ -35,8 +52,9 @@ async fn main() -> std::io::Result<()> {
           .service(api::tag::add_tag)
           .service(api::tag::update_tag)
           .service(api::tag::delte_tag)
+          .service(login)
   })
-  .bind(("127.0.0.1", 8080))?
+  .bind(("127.0.0.1", 8083))?
   .run()
   .await
 }

@@ -1,7 +1,9 @@
 use crate::{repository::mongodb_repos::MongoRepo};
 use crate::{api::response::MyResponse};
+use crate::{api::auth::auth_error};
 use actix_multipart::Multipart;
 use serde::Deserialize;
+use crate::api::user_data::UserData;
 use actix_web::{
   post,
   get,
@@ -14,7 +16,8 @@ use futures_util::StreamExt as _;
 use regex::Regex;
 
 #[post("/upload")]
-pub async fn upload_file(db: Data<MongoRepo>, mut payload: Multipart) -> HttpResponse  {
+pub async fn upload_file(db: Data<MongoRepo>, user: Option<UserData>, mut payload: Multipart) -> HttpResponse  {
+  if let Some(user) = user {
     let mut file_content: Option<Vec<u8>> = None;
     let mut file_name: Option<String> = None;
 
@@ -53,13 +56,19 @@ pub async fn upload_file(db: Data<MongoRepo>, mut payload: Multipart) -> HttpRes
     };
 
     HttpResponse::Ok().json(result)
-
+  } else {
+    auth_error()
+  }
 }
 
 #[get("upload_file_path")]
-pub async fn upload_file_path(db: Data<MongoRepo>, info: Query<Photo>) -> HttpResponse {
-  db.crate_photo(info.name.clone(), info.location.clone()).await.expect("create field");
-  HttpResponse::Ok().body("upload done")
+pub async fn upload_file_path(db: Data<MongoRepo>, user: Option<UserData>, info: Query<Photo>) -> HttpResponse {
+  if let Some(user) = user {
+    db.crate_photo(info.name.clone(), info.location.clone()).await.expect("create field");
+    HttpResponse::Ok().body("upload done")
+  } else {
+    auth_error()
+  }
 }
 
 #[derive(Deserialize)]
@@ -68,19 +77,23 @@ pub struct Upload_Info {
 }
 
 #[get("upload_file_dir")]
-pub async fn upload_file_dir(db: Data<MongoRepo>, info: Query<Upload_Info>) -> HttpResponse  {
-  let path = info.file_path.clone();
+pub async fn upload_file_dir(db: Data<MongoRepo>, user: Option<UserData>, info: Query<Upload_Info>) -> HttpResponse  {
+  if let Some(user) = user {
+    let path = info.file_path.clone();
 
-  db.crate_photo_dir(&path).await.expect("create field");
-
-
-  let result: MyResponse<String> = MyResponse {
-    result: "0".to_string(),
-    message: "upload done".to_string(),
-    data: None
-  };
-
-  HttpResponse::Ok().json(result)
+    db.crate_photo_dir(&path).await.expect("create field");
+  
+  
+    let result: MyResponse<String> = MyResponse {
+      result: "0".to_string(),
+      message: "upload done".to_string(),
+      data: None
+    };
+  
+    HttpResponse::Ok().json(result)
+  } else {
+    auth_error()
+  }
 }
 
 #[derive(Deserialize)]
@@ -91,18 +104,22 @@ pub struct Get_Info {
 
 
 #[get("get_photos")]
-pub async fn get_photos(db: Data<MongoRepo>, info: Query<Get_Info>) -> HttpResponse  {
-  let photos = db.get_photos(info.offset, info.limit).await;
-  match photos {
-    Ok(photos) => {
-      let result = MyResponse {
-        result: "0".to_string(),
-        message: "get done".to_string(),
-        data: Some(photos)
-      };
-      HttpResponse::Ok().json(result)
-    },
-    Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+pub async fn get_photos(db: Data<MongoRepo>, user: Option<UserData>, info: Query<Get_Info>) -> HttpResponse  {
+  if let Some(user) = user {
+    let photos = db.get_photos(info.offset, info.limit).await;
+    match photos {
+      Ok(photos) => {
+        let result = MyResponse {
+          result: "0".to_string(),
+          message: "get done".to_string(),
+          data: Some(photos)
+        };
+        HttpResponse::Ok().json(result)
+      },
+      Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    }
+  } else {
+    auth_error()
   }
 }
 
@@ -115,43 +132,47 @@ pub struct Update_Info {
 }
 
 #[get("update_photo")]
-pub async fn update_photo(db: Data<MongoRepo>, info: Query<Update_Info>) -> HttpResponse  {
-  let id: String = info.id.clone();
-  let tags: Vec<Option<String>>;
-  let re = Regex::new(r"^[^,]*(,[^,]*)*$").unwrap();
-  if re.is_match(&info.tag) {
-    tags = info.tag.split(',').map(|x| if x.is_empty() { None } else { Some(x.to_string()) })
-    .collect();
-  } else {
-    return HttpResponse::InternalServerError().body("tag is illegality")
-  };
-  let data = Photo {
-    id: Some(info.id.clone()),
-    name: info.name.to_owned(),
-    location: info.location.to_owned(),
-    tag: tags
-  };
-  let update_result = db.edit_photos(&id, data).await;
-  match update_result {
-    Ok(update) => {
-        if update.matched_count == 1 {
-            let updated_photo_info = db.get_photo(&id).await;
-            return match updated_photo_info {
-                Ok(photo) => {
-                  let result = MyResponse {
-                    result: "0".to_string(),
-                    message: "update done".to_string(),
-                    data: Some(photo)
-                  };
-                  HttpResponse::Ok().json(result)
-                },
-                Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-            };
-        } else {
-            return HttpResponse::NotFound().body("No photo found with specified ID");
-        }
+pub async fn update_photo(db: Data<MongoRepo>, user: Option<UserData>, info: Query<Update_Info>) -> HttpResponse  {
+  if let Some(user) = user {
+    let id: String = info.id.clone();
+    let tags: Vec<Option<String>>;
+    let re = Regex::new(r"^[^,]*(,[^,]*)*$").unwrap();
+    if re.is_match(&info.tag) {
+      tags = info.tag.split(',').map(|x| if x.is_empty() { None } else { Some(x.to_string()) })
+      .collect();
+    } else {
+      return HttpResponse::InternalServerError().body("tag is illegality")
+    };
+    let data = Photo {
+      id: Some(info.id.clone()),
+      name: info.name.to_owned(),
+      location: info.location.to_owned(),
+      tag: tags
+    };
+    let update_result = db.edit_photos(&id, data).await;
+    match update_result {
+      Ok(update) => {
+          if update.matched_count == 1 {
+              let updated_photo_info = db.get_photo(&id).await;
+              return match updated_photo_info {
+                  Ok(photo) => {
+                    let result = MyResponse {
+                      result: "0".to_string(),
+                      message: "update done".to_string(),
+                      data: Some(photo)
+                    };
+                    HttpResponse::Ok().json(result)
+                  },
+                  Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+              };
+          } else {
+              return HttpResponse::NotFound().body("No photo found with specified ID");
+          }
+      }
+      Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
-    Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+  } else {
+    auth_error()
   }
 }
 
@@ -162,8 +183,9 @@ pub struct Delete_Info {
 
 
 #[get("/delte_photo")]
-pub async fn delte_photo(db: Data<MongoRepo>, info: Query<Delete_Info>) -> HttpResponse  {
-  let id: String = info.id.clone();
+pub async fn delte_photo(db: Data<MongoRepo>, user: Option<UserData>, info: Query<Delete_Info>) -> HttpResponse  {
+  if let Some(user) = user {
+    let id: String = info.id.clone();
   if id.is_empty() {
     return HttpResponse::BadRequest().body("invalid ID");
   };
@@ -182,5 +204,8 @@ pub async fn delte_photo(db: Data<MongoRepo>, info: Query<Delete_Info>) -> HttpR
           }
       }
       Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+  }
+  } else {
+    auth_error()
   }
 }
