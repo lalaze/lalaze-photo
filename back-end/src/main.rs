@@ -24,15 +24,31 @@ async fn hello() -> impl Responder {
 
 #[derive(Serialize, Deserialize)]
 struct LoginDTO {
-  pub id: i32,
-  pub pwd: String,
+  pub username: String,
+  pub password: String,
 }
 
 /// 登陆
 #[post("/login")]
 async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> impl Responder {
-    let token = api::auth::create_jwt(&body.id);
-    HttpResponse::Ok().json(token)
+  // 检查密码对不对
+  let mut hasher = md5::Context::new();
+  // 将密码传递给计算器
+  hasher.consume(body.password.as_bytes());
+  // 计算 MD5 哈希值
+  let result = hasher.compute();
+  // 将哈希值转换为字符串表示
+  let hashed_password = format!("{:x}", result);
+  let user_data: Option<crate::api::user_data::UserData> = db.get_user(&body.username.clone());
+
+  if let Some(user) = user_data {
+    if hashed_password == user
+  } else {
+    HttpResponse::Ok().json("user error")
+  }
+  
+  // let token = api::auth::create_jwt(&body.username);
+  HttpResponse::Ok().json(token)
 }
 
 #[actix_web::main]
@@ -53,6 +69,7 @@ async fn main() -> std::io::Result<()> {
           .service(api::tag::update_tag)
           .service(api::tag::delte_tag)
           .service(login)
+          .service(api::user::add_user)
   })
   .bind(("127.0.0.1", 8083))?
   .run()

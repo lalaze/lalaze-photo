@@ -7,10 +7,8 @@ use actix_web::{
   get,
   web::{Data, Query, Path},
   HttpResponse,
-  error
 };
 use serde::Deserialize;
-use crate::models::tag::Tag;
 
 #[derive(Deserialize)]
 pub struct Tag_Info {

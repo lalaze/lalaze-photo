@@ -3,10 +3,9 @@ extern crate dotenv;
 use dotenv::dotenv;
 use futures_util::TryStreamExt;
 use futures_util::io::AsyncWriteExt;
-use crate::models::{ photo::Photo, tag::Tag };
+use crate::models::{ photo::Photo, tag::Tag, user::User };
 use std::{fs};
 use std::path::PathBuf;
-use mongodb::bson::oid::ObjectId;
 use mongodb::{
     bson::{extjson::de::Error, doc},
     Client,
@@ -20,7 +19,8 @@ pub struct MongoRepo {
   db: Database,
   bucket: GridFsBucket,
   col: Collection<Photo>,
-  col2: Collection<Tag>
+  pub col2: Collection<Tag>,
+  pub col3: Collection<User>,
 }
 
 impl MongoRepo {
@@ -40,8 +40,9 @@ impl MongoRepo {
         let bucket = db.gridfs_bucket(None);
         let col: Collection<Photo> = db.collection("photo");
         let col2: Collection<Tag> = db.collection("tags");
+        let col3: Collection<User> = db.collection("users");
         println!("{}", "数据库初始化成功");
-        MongoRepo { db, bucket, col, col2 }
+        MongoRepo { db, bucket, col, col2, col3 }
     }
 
     pub async fn upload_file(&self, file_name: String, data: Vec<u8>) -> Result<(), Error> {
@@ -158,51 +159,6 @@ impl MongoRepo {
           .await
           .ok()
           .expect("Error deleting photo");
-      Ok(photo_detail)
-    }
-
-    pub async fn add_tag(&self, name: &String, color: &String)  -> Result<(), Error> {
-      let tag = Tag {
-        name: name.to_string(),
-        color: color.to_string()
-      };
-
-      match self.col2.insert_one(tag, None).await {
-        Ok(_) => println!("Insert successful"),
-        Err(e) => {
-            eprintln!("Insert error: {}", e);
-        },
-      }
-      Ok(())
-    }
-
-    pub async fn edit_tag(&self, id: &String, name: &String, color: &String) -> Result<UpdateResult, Error> {
-      let filter = doc! {"_id": id};
-      let new_doc = doc! {
-        "$set":
-            {
-              "name": name,
-              "color": color
-            },
-        };
-      let updated_doc = self
-        .col
-        .update_one(filter, new_doc, None)
-        .await
-        .ok()
-        .expect("Error updating photo");
-      Ok(updated_doc)
-    }
-
-    pub async fn delete_tag(&self, id: &String) -> Result<DeleteResult, Error> {
-      let filter = doc! {"_id": ObjectId::parse_str(id).unwrap()};
-
-      let photo_detail = self
-          .col2
-          .delete_one(filter, None)
-          .await
-          .ok()
-          .expect("Error deleting tag");
       Ok(photo_detail)
     }
 }
