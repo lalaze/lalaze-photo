@@ -6,7 +6,7 @@ use actix_web::{ HttpResponse };
 const JWT_SECRET: &[u8] = b"Jwt_Secret";
 
 /// 创建token
-pub fn create_jwt(id: &i32) -> String {
+pub fn create_jwt(id: &String) -> String {
   let expiration = Utc::now()
       .checked_add_signed(chrono::Duration::seconds(3600))
       .expect("valid timestamp")
@@ -33,14 +33,14 @@ pub struct Claims {
     iss: String,
     pub exp: usize,
     /// 保存的用户id
-    pub id: i32,
+    pub id: String,
 }
 
 impl Claims {
-    pub fn new(id: &i32, exp: usize) -> Self {
+    pub fn new(id: &String, exp: usize) -> Self {
         Self {
             iss: "test".to_owned(),
-            id: *id,
+            id: id.to_string(),
             exp,
         }
     }

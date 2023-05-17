@@ -25,12 +25,12 @@ impl MongoRepo {
 
   pub async fn get_user(&self, username: &String) -> Result<Option<User>, Error>  {
     let filter = doc! {"_id": username};
-    let mut find_options = FindOptions::default();
-    let mut cursor = self.col3.find(filter, find_options).await.unwrap();
-    while let Some(User) = cursor.try_next().await.ok().expect("Error mapping through cursor") {
-      return Ok(Some(User))
+    let result = self.col3.find_one(filter, None).await.unwrap();
+    if let Some(doc) = result {
+      Ok(Some(doc))
+    } else {
+      Ok(None)
     }
-    Ok(None)
   }
 
 

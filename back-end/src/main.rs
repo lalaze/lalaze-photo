@@ -1,5 +1,6 @@
 use actix_web::{web, get, App, HttpResponse, HttpServer, Responder, web::Data, post};
 mod api; 
+use api::response::MyResponse;
 mod models;
 mod repository;
 use repository::mongodb_repos::MongoRepo;
@@ -30,7 +31,7 @@ struct LoginDTO {
 
 /// 登陆
 #[post("/login")]
-async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> impl Responder {
+async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> HttpResponse {
   // 检查密码对不对
   let mut hasher = md5::Context::new();
   // 将密码传递给计算器
@@ -39,16 +40,33 @@ async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> impl Responder
   let result = hasher.compute();
   // 将哈希值转换为字符串表示
   let hashed_password = format!("{:x}", result);
-  let user_data: Option<crate::api::user_data::UserData> = db.get_user(&body.username.clone());
+  let user_data = db.get_user(&body.username.clone()).await.unwrap();
 
   if let Some(user) = user_data {
-    if hashed_password == user
+    if hashed_password == user.password {
+      let token = api::auth::create_jwt(&user.userName);
+      let result: MyResponse<String> = MyResponse {
+        result: "0".to_string(),
+        message: "login success".to_string(),
+        data: Some(token)
+      };
+      HttpResponse::Ok().json(result)
+    } else {
+      let result: MyResponse<String> = MyResponse {
+        result: "0".to_string(),
+        message: "error password".to_string(),
+        data: None
+      };
+      HttpResponse::Ok().json(result)
+    }
   } else {
-    HttpResponse::Ok().json("user error")
+    let result: MyResponse<String> = MyResponse {
+      result: "0".to_string(),
+      message: "user error".to_string(),
+      data: None
+    };
+    HttpResponse::Ok().json(result)
   }
-  
-  // let token = api::auth::create_jwt(&body.username);
-  HttpResponse::Ok().json(token)
 }
 
 #[actix_web::main]

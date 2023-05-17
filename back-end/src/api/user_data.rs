@@ -4,7 +4,7 @@ use std::future::{ready, Ready};
 
 #[derive(Debug)]
 pub struct UserData {
-    pub id: i32,
+    pub id: String,
 }
 
 impl FromRequest for UserData {
