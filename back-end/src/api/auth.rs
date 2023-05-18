@@ -2,7 +2,7 @@ use chrono::Utc;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation, errors::Error as JwtError};
 use serde::{Serialize, Deserialize};
 use actix_web::{ HttpResponse };
-use crate::api::response::MyResponse;
+use crate::{api::response::MyResponse, api::response};
 
 const JWT_SECRET: &[u8] = b"Jwt_Secret";
 
@@ -48,10 +48,5 @@ impl Claims {
 }
 
 pub fn auth_error() -> HttpResponse {
-let result: MyResponse<String> = MyResponse {
-    result: "0".to_string(),
-    message: "error auth".to_string(),
-    data: None
-};
-  HttpResponse::Ok().json(result)
+    response::response!("0", "error auth", Some(""))
 }

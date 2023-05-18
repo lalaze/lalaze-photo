@@ -1,5 +1,5 @@
 use crate::{repository::mongodb_repos::MongoRepo};
-use crate::{api::response::MyResponse};
+use crate::{api::response::MyResponse, api::response};
 use crate::{api::auth::auth_error};
 use actix_multipart::Multipart;
 use serde::Deserialize;
@@ -48,14 +48,7 @@ pub async fn upload_file(db: Data<MongoRepo>, user: Option<UserData>, mut payloa
     let file_name = file_name.ok_or_else(|| error::ErrorBadRequest("missing file_name field")).unwrap();
 
     db.upload_file(file_name, file_content).await.expect("uplaod field");
-
-    let result: MyResponse<String> = MyResponse {
-      result: "0".to_string(),
-      message: "upload done".to_string(),
-      data: None
-    };
-
-    HttpResponse::Ok().json(result)
+    response::response!("0", "upload done", Some(""))
   } else {
     auth_error()
   }
@@ -83,14 +76,7 @@ pub async fn upload_file_dir(db: Data<MongoRepo>, user: Option<UserData>, info: 
 
     db.crate_photo_dir(&path).await.expect("create field");
   
-  
-    let result: MyResponse<String> = MyResponse {
-      result: "0".to_string(),
-      message: "upload done".to_string(),
-      data: None
-    };
-  
-    HttpResponse::Ok().json(result)
+    response::response!("0", "upload done", Some(""))
   } else {
     auth_error()
   }
@@ -109,14 +95,9 @@ pub async fn get_photos(db: Data<MongoRepo>, user: Option<UserData>, info: Query
     let photos = db.get_photos(info.offset, info.limit).await;
     match photos {
       Ok(photos) => {
-        let result = MyResponse {
-          result: "0".to_string(),
-          message: "get done".to_string(),
-          data: Some(photos)
-        };
-        HttpResponse::Ok().json(result)
+        response::response!("0", "get done", Some(photos))
       },
-      Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+      Err(err) =>  response::response!("0", err.to_string(), Some("")),
     }
   } else {
     auth_error()
@@ -156,20 +137,15 @@ pub async fn update_photo(db: Data<MongoRepo>, user: Option<UserData>, info: Que
               let updated_photo_info = db.get_photo(&id).await;
               return match updated_photo_info {
                   Ok(photo) => {
-                    let result = MyResponse {
-                      result: "0".to_string(),
-                      message: "update done".to_string(),
-                      data: Some(photo)
-                    };
-                    HttpResponse::Ok().json(result)
+                    response::response!("0", "update done", Some(photo))
                   },
-                  Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+                  Err(err) => response::response!("0", err.to_string(), Some("")),
               };
           } else {
               return HttpResponse::NotFound().body("No photo found with specified ID");
           }
       }
-      Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+      Err(err) => response::response!("0", err.to_string(), Some("")),
     }
   } else {
     auth_error()
@@ -193,17 +169,12 @@ pub async fn delte_photo(db: Data<MongoRepo>, user: Option<UserData>, info: Quer
   match result {
       Ok(res) => {
           if res.deleted_count == 1 {
-              let result: MyResponse<String> = MyResponse {
-                result: "0".to_string(),
-                message: "oto successfully deleted!".to_string(),
-                data: None
-              };
-              return HttpResponse::Ok().json(result);
+              response::response!("0", "photo successfully deleted!", Some(""))
           } else {
               return HttpResponse::NotFound().json("photo with specified ID not found!");
           }
       }
-      Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+      Err(err) => response::response!("0", err.to_string(), Some("")),
   }
   } else {
     auth_error()
