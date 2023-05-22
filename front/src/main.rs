@@ -1,6 +1,5 @@
 use yew::prelude::*;
 mod login_card;
-mod api;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
