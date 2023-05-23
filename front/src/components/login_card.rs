@@ -25,42 +25,39 @@ extern "C" {
 
 #[function_component]
 pub fn login_card() -> Html {
-  let username: String;
+  let username = use_state(|| String::new());
   let username_node = use_node_ref();
   let on_username_change = {
     let input_node_ref = username_node.clone();
+    let username = username.clone();
     Callback::from(move |_| {
       if let Some(input) = input_node_ref.cast::<HtmlInputElement>() {
           let value = input.value();
-          username = value
+          username.set(value)
       }
     })
   };
 
-  let password_value = use_state(String::default);
-
+  let password = use_state(|| String::new());
+  let password_node = use_node_ref();
   let on_password_change ={
-    let uv = password_value.clone();
-    Callback::from(move |e: Event| {
-      let target: EventTarget = e
-          .target()
-          .expect("Event should have a target when dispatched");
-
-        let result: String = match target.as_string() {
-            Some(s) => s,
-            None => String::new(),
-        };
-        uv.set(result);
+    let input_node_ref = password_node.clone();
+    let password = password.clone();
+    Callback::from(move |_| {
+      if let Some(input) = input_node_ref.cast::<HtmlInputElement>() {
+          let value = input.value();
+          password.set(value)
+      }
     })
   };
 
   let handle_click = {
     Callback::from(move |_| {
-      // let username = username_value.clone();
-      // let password = password_value.clone();
-      // spawn_local(async move {
-      //   login(username.as_str(), password.as_str()).await;
-      // })
+      let username = username.clone();
+      let password = password.clone();
+      spawn_local(async move {
+        login(username.as_str(), password.as_str()).await;
+      })
     })
   };
 
@@ -75,7 +72,7 @@ pub fn login_card() -> Html {
       <div class={classes!(String::from("field"))}>
         <div class={classes!(String::from("label"))}>{ "Password" }</div>
         <div class={classes!(String::from("control"))}>
-          <input class={classes!( String::from("input is-primary"))} type="password"  onchange={on_password_change} />
+          <input ref={password_node} class={classes!( String::from("input is-primary"))} type="password"  onchange={on_password_change} />
         </div>
       </div>
 

@@ -21,7 +21,7 @@ extern "C" {
     fn log_many(a: &str, b: &str);
 }
 
-const URL: &str = "http://localhost/8083";
+const URL: &str = "http://127.0.0.1/8083";
 
 #[derive(Serialize, Deserialize)]
 struct LoginReq {
@@ -30,7 +30,8 @@ struct LoginReq {
 }
 
 pub async fn login(name: &str, password: &str) ->  Result<(), Box<dyn std::error::Error>>  {
-  log("456");
+  log(name);
+  log(password);
 
   let body = LoginReq {
     username: name.to_string(),
