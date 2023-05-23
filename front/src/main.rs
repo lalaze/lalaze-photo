@@ -1,6 +1,7 @@
 use yew::prelude::*;
-mod login_card;
 use wasm_bindgen::prelude::*;
+pub mod api;
+pub mod components;
 
 #[wasm_bindgen]
 extern "C" {
@@ -25,7 +26,7 @@ extern "C" {
 fn App() -> Html {
     html! {
         <div class={classes!(String::from("content"))}>
-            <login_card::login_card />
+            <components::login_card::login_card />
         </div>
     }
 }
