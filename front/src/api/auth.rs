@@ -21,7 +21,7 @@ extern "C" {
     fn log_many(a: &str, b: &str);
 }
 
-const URL: &str = "http://127.0.0.1/8083";
+const URL: &str = "http://127.0.0.1:8083";
 
 #[derive(Serialize, Deserialize)]
 struct LoginReq {
@@ -40,7 +40,9 @@ pub async fn login(name: &str, password: &str) ->  Result<(), Box<dyn std::error
 
   let json_str = serde_json::to_string(&body).unwrap();
 
-  let resp = Request::post(&format!("{} {}", URL, "/login")).body(json_str)
+  log(&json_str);
+
+  let resp = Request::post(&format!("{}{}", URL, "/login")).body(json_str).header("Content-Type", "application/json")
     .send()
     .await
     .unwrap();
