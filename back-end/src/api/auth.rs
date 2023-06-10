@@ -48,5 +48,5 @@ impl Claims {
 }
 
 pub fn auth_error() -> HttpResponse {
-    response::response!("0", "error auth", Some(""))
+    response::response!(0, "error auth", Some(""))
 }

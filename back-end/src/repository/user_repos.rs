@@ -9,9 +9,15 @@ use crate::models::{ user::User };
 
 impl MongoRepo {
   pub async fn create_user(&self, name: &String, password: &String) -> Result<(), Error> {
+    let mut hasher = md5::Context::new();
+    hasher.consume(password.as_bytes());
+    // 计算 MD5 哈希值
+    let result = hasher.compute();
+    let hashed_password = format!("{:x}", result);
+
     let user = User {
       userName: name.to_string(),
-      password: password.to_string()
+      password: hashed_password
     };
 
     match self.col3.insert_one(user, None).await {

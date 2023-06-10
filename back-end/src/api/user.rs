@@ -2,6 +2,7 @@ use crate::{repository::mongodb_repos::MongoRepo};
 use actix_web::{web};
 use crate::{api::response::MyResponse};
 use serde::{Deserialize, Serialize};
+use crate::api::error_code::Error_Code;
 use crate::api::user_data::UserData;
 use actix_web::{
   post,
@@ -34,7 +35,7 @@ pub async fn add_user(db: Data<MongoRepo>, user: Option<UserData>, info: Query<U
   match result {
     Ok(()) => {
       let result: MyResponse<String> = MyResponse {
-        result: "0".to_string(),
+        result: 0,
         message: "add done".to_string(),
         data: None
       };
@@ -69,14 +70,14 @@ pub async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> HttpRespon
     if hashed_password == user.password {
       let token = crate::api::auth::create_jwt(&user.userName);
       let result: MyResponse<String> = MyResponse {
-        result: "0".to_string(),
+        result: 0,
         message: "login success".to_string(),
         data: Some(token)
       };
       HttpResponse::Ok().json(result)
     } else {
       let result: MyResponse<String> = MyResponse {
-        result: "0".to_string(),
+        result: Error_Code::login_failed as i32,
         message: "error password".to_string(),
         data: None
       };
@@ -84,10 +85,21 @@ pub async fn login(db: Data<MongoRepo>, body: web::Json<LoginDTO>) -> HttpRespon
     }
   } else {
     let result: MyResponse<String> = MyResponse {
-      result: "0".to_string(),
+      result: Error_Code::login_failed as i32,
       message: "user error".to_string(),
       data: None
     };
     HttpResponse::Ok().json(result)
   }
+}
+
+#[get("/addlalaze")]
+pub async fn addlalaze(db: Data<MongoRepo>) -> HttpResponse {
+  db.create_user(&"lalaze".to_string(), &"123456".to_string()).await;
+  let result: MyResponse<String> = MyResponse {
+    result: 0,
+    message: "user error".to_string(),
+    data: None
+  };
+  HttpResponse::Ok().json(result)
 }

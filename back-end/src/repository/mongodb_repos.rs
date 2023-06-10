@@ -35,13 +35,11 @@ impl MongoRepo {
             Ok(v) => v.to_string(),
             Err(_) => format!("Error loading env variable"),
         };
-        println!("{}", "数据库初始化");
         let db = client.database(&database_name);
         let bucket = db.gridfs_bucket(None);
         let col: Collection<Photo> = db.collection("photo");
         let col2: Collection<Tag> = db.collection("tags");
         let col3: Collection<User> = db.collection("users");
-        println!("{}", "数据库初始化成功");
         MongoRepo { db, bucket, col, col2, col3 }
     }
 

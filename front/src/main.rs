@@ -1,33 +1,60 @@
+use slab::Slab;
+use web_sys::Element;
 use yew::prelude::*;
-use wasm_bindgen::prelude::*;
+use gloo::console;
 pub mod api;
 pub mod components;
+pub mod utils;
 
-#[wasm_bindgen]
-extern "C" {
+use components::message;
 
-    // Use `js_namespace` here to bind `console.log(..)` instead of just
-    // `log(..)`
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-
-    // The `console.log` is quite polymorphic, so we can bind it with multiple
-    // signatures. Note that we need to use `js_name` to ensure we always call
-    // `log` in JS.
-    #[wasm_bindgen(js_namespace = console, js_name = log)]
-    fn log_u32(a: u32);
-
-    // Multiple arguments too!
-    #[wasm_bindgen(js_namespace = console, js_name = log)]
-    fn log_many(a: &str, b: &str);
+pub struct App {
+    apps: Slab<(Element, AppHandle<message::MessageModel>)>,
+    apps_container_ref: NodeRef,
 }
 
-#[function_component]
-fn App() -> Html {
-    html! {
-        <div class={classes!(String::from("content"))}>
-            <components::login_card::login_card />
-        </div>
+impl Component for App {
+    type Message = message::Msg;
+    type Properties = ();
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {
+            apps: Slab::new(),
+            apps_container_ref: NodeRef::default(),
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            message::Msg::SpawnCounterAppInstance(p) => {
+              
+              self.get_message(ctx, p)
+            },
+            message::Msg::DestroyCounterApp(app_id) => {
+                // Get the app from the app slabmap
+                let (app_div, app) = self.apps.remove(app_id);
+
+                // Destroy the app
+                app.destroy();
+
+                // Remove the app div from the DOM
+                app_div.remove()
+            }
+        }
+
+        false
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        utils::set_zoom();
+
+        html! {
+          <div class={classes!("app")} ref={self.apps_container_ref.clone()}>
+            <div class={classes!(String::from("content"))}>
+              <components::login_card::login_card />
+            </div>
+          </div>
+        }
     }
 }
 

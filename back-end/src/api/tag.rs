@@ -27,7 +27,7 @@ pub async fn add_tag(db: Data<MongoRepo>, user: Option<UserData>, info: Query<Ta
     match result {
       Ok(()) => {
         let result: MyResponse<String> = MyResponse {
-          result: "0".to_string(),
+          result: 0,
           message: "add done".to_string(),
           data: None
         };
@@ -60,7 +60,7 @@ pub async fn update_tag(db: Data<MongoRepo>, user: Option<UserData>, info: Query
               return match updated_tag_info {
                 Ok(tag) => {
                   let result = MyResponse {
-                    result: "0".to_string(),
+                    result: 0,
                     message: "update done".to_string(),
                     data: Some(tag)
                   };
@@ -98,7 +98,7 @@ pub async fn delte_tag(db: Data<MongoRepo>, user: Option<UserData>, info: Query<
         Ok(res) => {
             if res.deleted_count == 1 {
               let result: MyResponse<String> = MyResponse {
-                result: "0".to_string(),
+                result: 0,
                 message: "tag successfully deleted!".to_string(),
                 data: None
               };

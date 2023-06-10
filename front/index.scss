@@ -7,6 +7,13 @@
 html {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  background-color: rgb(32, 33, 36);
+  @include center;
+}
+.app {
+  width: 100%;
+  height: 100%;
   background-color: rgb(32, 33, 36);
   @include center;
 }
@@ -16,4 +23,9 @@ html {
 .login-box {
   width: 400px;
   height: 280px;
+}
+.message-location {
+  position: fixed;
+  top: 0;
+  right: 0;
 }

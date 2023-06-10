@@ -1,27 +1,17 @@
-use gloo_net::{ http::Request, http::Response};
+use gloo::{ net::http::Request, net::http::Response, console};
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-extern "C" {
-
-    // Use `js_namespace` here to bind `console.log(..)` instead of just
-    // `log(..)`
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-
-    // The `console.log` is quite polymorphic, so we can bind it with multiple
-    // signatures. Note that we need to use `js_name` to ensure we always call
-    // `log` in JS.
-    #[wasm_bindgen(js_namespace = console, js_name = log)]
-    fn log_u32(a: u32);
-
-    // Multiple arguments too!
-    #[wasm_bindgen(js_namespace = console, js_name = log)]
-    fn log_many(a: &str, b: &str);
-}
+use yew::{Callback};
+use crate::message;
+use serde_json::Value;
 
 const URL: &str = "http://127.0.0.1:8083";
+
+#[derive(Serialize, Deserialize)]
+pub struct Resp {
+  pub result: String,
+  pub message: String,
+  pub data: Option<Value>,
+}
 
 #[derive(Serialize, Deserialize)]
 struct LoginReq {
@@ -29,9 +19,7 @@ struct LoginReq {
   password: String
 }
 
-pub async fn login(name: &str, password: &str) ->  Result<(), Box<dyn std::error::Error>>  {
-  log(name);
-  log(password);
+pub async fn login(name: &str, password: &str) ->  Result<Option<Resp>, Box<dyn std::error::Error>>  {
 
   let body = LoginReq {
     username: name.to_string(),
@@ -40,14 +28,33 @@ pub async fn login(name: &str, password: &str) ->  Result<(), Box<dyn std::error
 
   let json_str = serde_json::to_string(&body).unwrap();
 
-  log(&json_str);
-
   let resp = Request::post(&format!("{}{}", URL, "/login")).body(json_str).header("Content-Type", "application/json")
     .send()
     .await
     .unwrap();
-
-  print!("{}", resp.text().await.unwrap());
-
-  Ok(())
+  Ok(Some(resp.json::<Resp>().await.unwrap()))
+  // if resp.status() == 200 {
+  //   // let res = resp.json::<Resp>().await.unwrap();
+  //   // console::log!(res.result.as_str());
+  //   // match res.result.as_str() {
+  //   //   "0" => Ok(Some(resp.json::<Resp>().await.unwrap())),
+  //   //   _ => {
+  //   //     console::log!("here");
+  //   //     message::Msg::SpawnCounterAppInstance(message::Message {
+  //   //       message_type: message::MessageType::Danger,
+  //   //       text: res.message,
+  //   //       long: None,
+  //   //     });
+  //   //     Ok(None)
+  //   //   }
+  //   // }
+  //   Ok(Some(resp.json::<Resp>().await.unwrap()))
+  // } else {
+  //   message::Msg::SpawnCounterAppInstance(message::Message {
+  //     message_type: message::MessageType::Danger,
+  //     text: format!("{} {}", "error", resp.status()),
+  //     long: None,
+  //   });
+  //   Ok(None)
+  // }
 }
