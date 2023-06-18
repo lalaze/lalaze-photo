@@ -1,7 +1,7 @@
+use gloo::console;
 use slab::Slab;
 use web_sys::Element;
 use yew::prelude::*;
-use gloo::console;
 pub mod api;
 pub mod components;
 pub mod utils;
@@ -26,10 +26,7 @@ impl Component for App {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            message::Msg::SpawnCounterAppInstance(p) => {
-              
-              self.get_message(ctx, p)
-            },
+            message::Msg::SpawnCounterAppInstance(p) => self.get_message(ctx, p),
             message::Msg::DestroyCounterApp(app_id) => {
                 // Get the app from the app slabmap
                 let (app_div, app) = self.apps.remove(app_id);
@@ -48,10 +45,14 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         utils::set_zoom();
 
+        let message: Callback<message::Message> = Callback::from(move |p: message::Message| {
+          message::Msg::SpawnCounterAppInstance(p);
+        });
+
         html! {
           <div class={classes!("app")} ref={self.apps_container_ref.clone()}>
             <div class={classes!(String::from("content"))}>
-              <components::login_card::login_card />
+              <components::login_card::login_card {message} />
             </div>
           </div>
         }

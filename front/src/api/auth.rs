@@ -19,7 +19,7 @@ struct LoginReq {
   password: String
 }
 
-pub async fn login(name: &str, password: &str) ->  Result<Option<Resp>, Box<dyn std::error::Error>>  {
+pub async fn login(name: &str, password: &str) ->  Result<Resp, Box<dyn std::error::Error>>  {
 
   let body = LoginReq {
     username: name.to_string(),
@@ -32,29 +32,5 @@ pub async fn login(name: &str, password: &str) ->  Result<Option<Resp>, Box<dyn 
     .send()
     .await
     .unwrap();
-  Ok(Some(resp.json::<Resp>().await.unwrap()))
-  // if resp.status() == 200 {
-  //   // let res = resp.json::<Resp>().await.unwrap();
-  //   // console::log!(res.result.as_str());
-  //   // match res.result.as_str() {
-  //   //   "0" => Ok(Some(resp.json::<Resp>().await.unwrap())),
-  //   //   _ => {
-  //   //     console::log!("here");
-  //   //     message::Msg::SpawnCounterAppInstance(message::Message {
-  //   //       message_type: message::MessageType::Danger,
-  //   //       text: res.message,
-  //   //       long: None,
-  //   //     });
-  //   //     Ok(None)
-  //   //   }
-  //   // }
-  //   Ok(Some(resp.json::<Resp>().await.unwrap()))
-  // } else {
-  //   message::Msg::SpawnCounterAppInstance(message::Message {
-  //     message_type: message::MessageType::Danger,
-  //     text: format!("{} {}", "error", resp.status()),
-  //     long: None,
-  //   });
-  //   Ok(None)
-  // }
+  Ok(resp.json::<Resp>().await.unwrap())
 }

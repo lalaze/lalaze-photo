@@ -4,8 +4,13 @@ use crate::message::{Msg, MessageType, Message};
 use crate::api::auth::login;
 use wasm_bindgen_futures::spawn_local;
 
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub message: Callback<Message>,
+}   
+
 #[function_component]
-pub fn login_card() -> Html {
+pub fn login_card(props: &Props) -> Html {
   let username = use_state(|| String::new());
   let username_node = use_node_ref();
   let on_username_change = {
@@ -32,13 +37,21 @@ pub fn login_card() -> Html {
     })
   };
 
+  let do_this_func = props.message.clone();
+
   let handle_click = {
     Callback::from(move |_| {
       let username = username.clone();
       let password = password.clone();
       spawn_local(async move {
         let res = login(username.as_str(), password.as_str()).await.unwrap();
-        ctx.han
+        if res.result == "0" {
+          do_this_func.emit(Message {
+            message_type: MessageType::Success,
+            text: String::from("Login success"),
+            long: None,
+          });
+        }
       })
     })
   };
